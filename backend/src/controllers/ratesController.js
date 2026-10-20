@@ -84,7 +84,46 @@ const createRate = async (req, res) => {
   }
 };
 
+const updateRate = async (req, res) => {
+  try {
+    const { product_id, amount, currency } = req.body;
+    if (!product_id) {
+      return res.status(400).json({ success: false, message: 'El id del producto es obligatorio.' });
+    }
+
+    const numAmount = Number(amount);
+    if (amount === undefined || amount === null || amount === '' || !Number.isFinite(numAmount) || numAmount < 0) {
+      return res.status(400).json({ success: false, message: 'El monto de la tarifa debe ser un valor positivo.' });
+    }
+    if (!['PEN', 'USD'].includes(currency)) {
+      return res.status(400).json({ success: false, message: 'La moneda debe ser PEN o USD.' });
+    }
+
+    const updates = { product_id, amount: numAmount, currency };
+    if (isConfigured) {
+      const { data, error } = await supabase
+        .from('rates')
+        .update(updates)
+        .eq('id', req.params.id)
+        .select()
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return res.status(404).json({ success: false, message: 'Tarifa no encontrada.' });
+      return res.json({ success: true, rate: data });
+    }
+
+    const rate = memoryStore.rates.find(item => item.id === req.params.id);
+    if (!rate) return res.status(404).json({ success: false, message: 'Tarifa no encontrada.' });
+    Object.assign(rate, updates);
+    res.json({ success: true, rate });
+  } catch (error) {
+    console.error('Error actualizando tarifa:', error);
+    res.status(500).json({ success: false, message: 'Error interno al actualizar tarifa' });
+  }
+};
+
 module.exports = {
   getRates,
-  createRate
+  createRate,
+  updateRate
 };

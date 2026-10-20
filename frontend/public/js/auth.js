@@ -31,12 +31,12 @@ const Auth = {
     return null;
   },
 
-  setCurrentUser(user) {
+  setCurrentUser(user, token = '') {
     localStorage.setItem('nexus_user', JSON.stringify(user));
     if (window.API?.usesSupabase) {
       localStorage.removeItem('nexus_token');
     } else {
-      localStorage.setItem('nexus_token', `token-${user.id}`);
+      localStorage.setItem('nexus_token', token || localStorage.getItem('nexus_token') || `token-${user.id}`);
     }
     this.updateUserUI(user);
   },
@@ -99,7 +99,8 @@ const Auth = {
     // Regla de Negocio: Solo el administrador puede modificar catálogos maestros (Productos, Clientes, Tarifas)
     const isAdmin = user.role === 'administrador';
     document.querySelectorAll('.admin-only-action').forEach(el => {
-      el.style.display = isAdmin ? 'inline-flex' : 'none';
+      const tableCell = el.tagName === 'TD' || el.tagName === 'TH';
+      el.style.display = isAdmin ? (tableCell ? 'table-cell' : 'inline-flex') : 'none';
     });
     document.querySelectorAll('.non-admin-notice').forEach(el => {
       el.style.display = isAdmin ? 'none' : 'inline-flex';

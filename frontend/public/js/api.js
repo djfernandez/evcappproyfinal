@@ -259,6 +259,11 @@
       const method = (options.method || 'GET').toUpperCase();
       const body = options.body ? JSON.parse(options.body) : {};
       const cleanEndpoint = endpoint.split('?')[0];
+      const requireMockAdmin = () => {
+        if (window.Auth?.getCurrentUser()?.role !== 'administrador') {
+          throw new Error('Acceso denegado. Solo un administrador puede modificar catálogos.');
+        }
+      };
 
       // 1. Auth: Login
       if (cleanEndpoint === '/auth/login' && method === 'POST') {
@@ -284,6 +289,7 @@
           return { success: true, products };
         }
         if (method === 'POST') {
+          requireMockAdmin();
           const newProduct = {
             id: 'prod-' + Date.now(),
             product_type: body.product_type || 'Libros',
@@ -314,6 +320,17 @@
         }
       }
 
+      const productUpdate = cleanEndpoint.match(/^\/products\/([^/]+)$/);
+      if (productUpdate && method === 'PATCH') {
+        requireMockAdmin();
+        const products = MockDB.get('products', INITIAL_PRODUCTS);
+        const product = products.find(item => item.id === productUpdate[1]);
+        if (!product) throw new Error('Producto no encontrado');
+        Object.assign(product, body);
+        MockDB.set('products', products);
+        return { success: true, product };
+      }
+
       // 4. Clients
       if (cleanEndpoint === '/clients') {
         let clients = MockDB.get('clients', INITIAL_CLIENTS);
@@ -321,6 +338,7 @@
           return { success: true, clients };
         }
         if (method === 'POST') {
+          requireMockAdmin();
           // Validación de RUC / DNI
           if (body.doc_type === 'RUC' && (!body.doc_number?.startsWith('10') && !body.doc_number?.startsWith('20'))) {
             throw new Error('El RUC debe comenzar con 10 o 20.');
@@ -343,6 +361,17 @@
         }
       }
 
+      const clientUpdate = cleanEndpoint.match(/^\/clients\/([^/]+)$/);
+      if (clientUpdate && method === 'PATCH') {
+        requireMockAdmin();
+        const clients = MockDB.get('clients', INITIAL_CLIENTS);
+        const client = clients.find(item => item.id === clientUpdate[1]);
+        if (!client) throw new Error('Cliente no encontrado');
+        Object.assign(client, body);
+        MockDB.set('clients', clients);
+        return { success: true, client };
+      }
+
       // 5. Rates
       if (cleanEndpoint === '/rates') {
         let rates = MockDB.get('rates', INITIAL_RATES);
@@ -350,6 +379,7 @@
           return { success: true, rates };
         }
         if (method === 'POST') {
+          requireMockAdmin();
           const products = MockDB.get('products', INITIAL_PRODUCTS);
           const prod = products.find(p => p.id === body.product_id);
 
@@ -374,6 +404,24 @@
 
           return { success: true, rate: newRate, message: 'Tarifa registrada exitosamente' };
         }
+      }
+
+      const rateUpdate = cleanEndpoint.match(/^\/rates\/([^/]+)$/);
+      if (rateUpdate && method === 'PATCH') {
+        requireMockAdmin();
+        const rates = MockDB.get('rates', INITIAL_RATES);
+        const rate = rates.find(item => item.id === rateUpdate[1]);
+        if (!rate) throw new Error('Tarifa no encontrada');
+        Object.assign(rate, body);
+        MockDB.set('rates', rates);
+        const products = MockDB.get('products', INITIAL_PRODUCTS);
+        const product = products.find(item => item.id === rate.product_id);
+        if (product) {
+          product.rate = rate.amount;
+          product.currency = rate.currency;
+          MockDB.set('products', products);
+        }
+        return { success: true, rate };
       }
 
       // 6. Quotations
@@ -573,6 +621,25 @@
       });
     },
 
+    async updateProduct(id, productData) {
+      if (supabaseClient) {
+        const product = await getSupabaseData(
+          supabaseClient.from('products').update({
+            product_type: productData.product_type,
+            name: productData.name,
+            author: productData.author,
+            editorial: productData.editorial,
+            stock: productData.stock
+          }).eq('id', id).select().single()
+        );
+        return { success: true, product };
+      }
+      return this.request(`/products/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(productData)
+      });
+    },
+
     async getClients(params = {}) {
       if (supabaseClient) {
         let clients = await getSupabaseData(
@@ -599,6 +666,19 @@
       }
       return this.request('/clients', {
         method: 'POST',
+        body: JSON.stringify(clientData)
+      });
+    },
+
+    async updateClient(id, clientData) {
+      if (supabaseClient) {
+        const client = await getSupabaseData(
+          supabaseClient.from('clients').update(clientData).eq('id', id).select().single()
+        );
+        return { success: true, client };
+      }
+      return this.request(`/clients/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
         body: JSON.stringify(clientData)
       });
     },
@@ -633,6 +713,19 @@
       }
       return this.request('/rates', {
         method: 'POST',
+        body: JSON.stringify(rateData)
+      });
+    },
+
+    async updateRate(id, rateData) {
+      if (supabaseClient) {
+        const rate = await getSupabaseData(
+          supabaseClient.from('rates').update(rateData).eq('id', id).select().single()
+        );
+        return { success: true, rate };
+      }
+      return this.request(`/rates/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
         body: JSON.stringify(rateData)
       });
     },

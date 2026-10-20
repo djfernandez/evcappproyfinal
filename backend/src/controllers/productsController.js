@@ -132,7 +132,54 @@ const createProduct = async (req, res) => {
   }
 };
 
+const updateProduct = async (req, res) => {
+  try {
+    const { product_type, name, author, editorial, stock } = req.body;
+    const validTypes = ['Libros', 'Revistas', 'Pruebas'];
+    const stockNumber = Number(stock);
+
+    if (!validTypes.includes(product_type)) {
+      return res.status(400).json({ success: false, message: `El tipo de producto debe ser uno de: ${validTypes.join(', ')}` });
+    }
+    if (![name, author, editorial].every(value => typeof value === 'string' && value.trim())) {
+      return res.status(400).json({ success: false, message: 'Nombre, autor y editorial son campos obligatorios.' });
+    }
+    if (!Number.isInteger(stockNumber) || stockNumber < 0) {
+      return res.status(400).json({ success: false, message: 'El stock actual debe ser un número entero mayor o igual a 0.' });
+    }
+
+    const updates = {
+      product_type,
+      name: name.trim(),
+      author: author.trim(),
+      editorial: editorial.trim(),
+      stock: stockNumber
+    };
+
+    if (isConfigured) {
+      const { data, error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', req.params.id)
+        .select()
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return res.status(404).json({ success: false, message: 'Producto no encontrado.' });
+      return res.json({ success: true, product: data });
+    }
+
+    const product = memoryStore.products.find(item => item.id === req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Producto no encontrado.' });
+    Object.assign(product, updates);
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error('Error actualizando producto:', error);
+    res.status(500).json({ success: false, message: 'Error interno al actualizar producto' });
+  }
+};
+
 module.exports = {
   getProducts,
-  createProduct
+  createProduct,
+  updateProduct
 };

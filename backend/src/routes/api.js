@@ -16,14 +16,17 @@ router.get('/auth/users', authController.getDemoUsers);
 // Rutas de Productos
 router.get('/products', productsController.getProducts);
 router.post('/products', authenticateUser, requireRole(['administrador']), productsController.createProduct);
+router.patch('/products/:id', authenticateUser, requireRole(['administrador']), productsController.updateProduct);
 
 // Rutas de Clientes
 router.get('/clients', clientsController.getClients);
 router.post('/clients', authenticateUser, requireRole(['administrador']), clientsController.createClient);
+router.patch('/clients/:id', authenticateUser, requireRole(['administrador']), clientsController.updateClient);
 
 // Rutas de Tarifas
 router.get('/rates', ratesController.getRates);
 router.post('/rates', authenticateUser, requireRole(['administrador']), ratesController.createRate);
+router.patch('/rates/:id', authenticateUser, requireRole(['administrador']), ratesController.updateRate);
 
 // Rutas de Cotizaciones
 router.get('/quotations', authenticateUser, quotationsController.getQuotations);

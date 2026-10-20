@@ -44,21 +44,26 @@ TO authenticated
 USING (public.current_user_role() = 'administrador');
 
 -- 3. Políticas para Clientes (clients)
--- Todos los usuarios autenticados pueden consultar y crear clientes
+-- Todos los usuarios autenticados pueden consultar clientes
 CREATE POLICY "Clients readable by all"
 ON public.clients FOR SELECT
 TO authenticated
 USING (true);
 
-CREATE POLICY "Clients insertable by authenticated"
+-- Solo administradores pueden crear, actualizar o eliminar clientes
+CREATE POLICY "Clients insertable by admins"
 ON public.clients FOR INSERT
 TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Clients updatable by supervisors or admins"
+WITH CHECK (public.current_user_role() = 'administrador');
+CREATE POLICY "Clients updatable by admins"
 ON public.clients FOR UPDATE
 TO authenticated
-USING (public.current_user_role() IN ('supervisor', 'administrador'));
+USING (public.current_user_role() = 'administrador')
+WITH CHECK (public.current_user_role() = 'administrador');
+CREATE POLICY "Clients deletable by admins"
+ON public.clients FOR DELETE
+TO authenticated
+USING (public.current_user_role() = 'administrador');
 
 -- 4. Políticas para Tarifas (rates)
 CREATE POLICY "Rates readable by all"

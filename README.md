@@ -139,9 +139,9 @@ Si al crear una cotización aparece `duplicate key value violates unique constra
    - Descuento &gt; 15%: Genera automáticamente una solicitud en estado **`pendiente`**.
    - Rol **Supervisor** accede a la bandeja de aprobaciones para autorizar o rechazar con observaciones.
 4. **Control de Acceso a Catálogos Maestros (RBAC)**:
-   - **Solo el Administrador** puede crear o modificar Productos, Clientes y Tarifas.
+   - **Solo el Administrador** puede crear o modificar Productos, Clientes y Tarifas. En cada catálogo, el botón **Editar** abre un formulario para actualizar sus datos; la tarifa se edita desde su propio catálogo.
    - Los roles **Vendedor** y **Supervisor** solo tienen permisos de consulta (modo solo lectura).
-   - El backend bloquea intentos no autorizados devolviendo `HTTP 403 Forbidden`.
+   - La API bloquea intentos no autorizados devolviendo `HTTP 403 Forbidden`, y las políticas RLS aplican la misma regla en Supabase.
 5. **Cierre de Sesión y Elección de Rol (Logout)**:
    - Botón de cierre de sesión en la barra lateral y header superior para limpiar la sesión activa y permitir elegir rol desde la pantalla de login.
 6. **Cálculo Automático**:

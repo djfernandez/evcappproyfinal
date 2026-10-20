@@ -199,7 +199,7 @@
                       <select class="form-select" id="quote-client-select" required>
                         <option value="">-- Selecciona un Cliente --</option>
                       </select>
-                      <button type="button" class="btn btn-secondary btn-sm admin-only-action" id="btn-quick-new-client" onclick="UI.openModal('modal-new-client')" title="Registrar nuevo cliente (Solo Admin)">
+                      <button type="button" class="btn btn-secondary btn-sm admin-only-action" id="btn-quick-new-client" onclick="App.openNewClientModal()" title="Registrar nuevo cliente (Solo Admin)">
                         ➕
                       </button>
                     </div>
@@ -375,7 +375,7 @@
         <div class="card-panel">
           <div class="card-panel-header">
             <div class="card-panel-title">Catálogo de Productos y Stock</div>
-            <button class="btn btn-primary btn-sm admin-only-action" id="btn-new-product" onclick="UI.openModal('modal-new-product')">
+            <button class="btn btn-primary btn-sm admin-only-action" id="btn-new-product" onclick="App.openNewProductModal()">
               ➕ Nuevo Producto
             </button>
             <span class="non-admin-notice" style="display: none; font-size: 0.78rem; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); align-items: center; gap: 0.35rem;">
@@ -402,6 +402,7 @@
                   <th>Editorial</th>
                   <th>Stock Actual</th>
                   <th>Tarifa Base</th>
+                  <th class="admin-only-action">Acciones</th>
                 </tr>
               </thead>
               <tbody id="products-table-tbody">
@@ -419,7 +420,7 @@
         <div class="card-panel">
           <div class="card-panel-header">
             <div class="card-panel-title">Directorio de Clientes B2B</div>
-            <button class="btn btn-primary btn-sm admin-only-action" id="btn-new-client" onclick="UI.openModal('modal-new-client')">
+            <button class="btn btn-primary btn-sm admin-only-action" id="btn-new-client" onclick="App.openNewClientModal()">
               ➕ Nuevo Cliente
             </button>
             <span class="non-admin-notice" style="display: none; font-size: 0.78rem; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); align-items: center; gap: 0.35rem;">
@@ -436,6 +437,7 @@
                   <th>Razón Social / Nombres</th>
                   <th>Dirección</th>
                   <th>Teléfono</th>
+                  <th class="admin-only-action">Acciones</th>
                 </tr>
               </thead>
               <tbody id="clients-table-tbody">
@@ -469,6 +471,7 @@
                   <th>Tipo</th>
                   <th>Monto de Tarifa</th>
                   <th>Moneda</th>
+                  <th class="admin-only-action">Acciones</th>
                 </tr>
               </thead>
               <tbody id="rates-table-tbody">
@@ -490,7 +493,7 @@
 <!-- Modal: Nuevo Cliente (con validación de RUC 10/20) -->
 <dialog id="modal-new-client" class="custom-modal">
   <div class="modal-header">
-    <h3 style="font-size: 1.15rem; font-weight: 700;">Registrar Nuevo Cliente</h3>
+    <h3 id="client-modal-title" style="font-size: 1.15rem; font-weight: 700;">Registrar Nuevo Cliente</h3>
     <button class="btn-remove-item" onclick="UI.closeModal('modal-new-client')">✕</button>
   </div>
   <form id="form-new-client">
@@ -526,7 +529,7 @@
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" onclick="UI.closeModal('modal-new-client')">Cancelar</button>
-      <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+      <button type="submit" class="btn btn-primary" id="client-submit-label">Guardar Cliente</button>
     </div>
   </form>
 </dialog>
@@ -534,7 +537,7 @@
 <!-- Modal: Nuevo Producto -->
 <dialog id="modal-new-product" class="custom-modal">
   <div class="modal-header">
-    <h3 style="font-size: 1.15rem; font-weight: 700;">Registrar Nuevo Producto</h3>
+    <h3 id="product-modal-title" style="font-size: 1.15rem; font-weight: 700;">Registrar Nuevo Producto</h3>
     <button class="btn-remove-item" onclick="UI.closeModal('modal-new-product')">✕</button>
   </div>
   <form id="form-new-product">
@@ -569,11 +572,11 @@
           <label class="form-label" for="prod-stock">Stock Actual *</label>
           <input type="number" class="form-input" id="prod-stock" min="0" value="50" required />
         </div>
-        <div class="form-group">
+        <div class="form-group" id="prod-initial-rate-group">
           <label class="form-label" for="prod-rate">Tarifa Base *</label>
           <input type="number" step="0.01" class="form-input" id="prod-rate" min="0" value="120.00" required />
         </div>
-        <div class="form-group">
+        <div class="form-group" id="prod-currency-group">
           <label class="form-label" for="prod-currency">Moneda</label>
           <select class="form-select" id="prod-currency">
             <option value="PEN">PEN (S/)</option>
@@ -584,7 +587,7 @@
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" onclick="UI.closeModal('modal-new-product')">Cancelar</button>
-      <button type="submit" class="btn btn-primary">Registrar Producto</button>
+      <button type="submit" class="btn btn-primary" id="product-submit-label">Guardar Producto</button>
     </div>
   </form>
 </dialog>
@@ -592,7 +595,7 @@
 <!-- Modal: Nueva Tarifa (Solo Administrador) -->
 <dialog id="modal-new-rate" class="custom-modal">
   <div class="modal-header">
-    <h3 style="font-size: 1.15rem; font-weight: 700;">Registrar Nueva Tarifa</h3>
+    <h3 id="rate-modal-title" style="font-size: 1.15rem; font-weight: 700;">Registrar Nueva Tarifa</h3>
     <button class="btn-remove-item" onclick="UI.closeModal('modal-new-rate')">✕</button>
   </div>
   <form id="form-new-rate">
@@ -620,7 +623,7 @@
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" onclick="UI.closeModal('modal-new-rate')">Cancelar</button>
-      <button type="submit" class="btn btn-primary">Guardar Tarifa</button>
+      <button type="submit" class="btn btn-primary" id="rate-submit-label">Guardar Tarifa</button>
     </div>
   </form>
 </dialog>

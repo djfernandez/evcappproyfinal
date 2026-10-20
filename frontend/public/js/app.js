@@ -729,7 +729,6 @@ const App = {
       let stockClass = 'stock-ok';
       if (p.stock === 0) stockClass = 'stock-out';
       else if (p.stock < 5) stockClass = 'stock-low';
-
       return `
         <tr>
           <td>
@@ -748,29 +747,71 @@ const App = {
           <td>
             <strong style="font-family: var(--font-mono);">${p.currency || 'PEN'} ${parseFloat(p.rate || 0).toFixed(2)}</strong>
           </td>
+          <td class="admin-only-action" style="display: ${Auth.getCurrentUser()?.role === 'administrador' ? 'table-cell' : 'none'};">${Auth.getCurrentUser()?.role === 'administrador'
+            ? `<button class="btn btn-secondary btn-sm" onclick="App.openEditProduct('${p.id}')">✏️ Editar</button>`
+            : ''}</td>
         </tr>
       `;
     }).join('');
   },
 
+  openEditProduct(productId) {
+    const product = this.state.products.find(item => item.id === productId);
+    if (!product || Auth.getCurrentUser()?.role !== 'administrador') return;
+
+    const form = document.getElementById('form-new-product');
+    form.dataset.editId = product.id;
+    document.getElementById('product-modal-title').textContent = 'Editar Producto';
+    document.getElementById('prod-type').value = product.product_type;
+    document.getElementById('prod-name').value = product.name;
+    document.getElementById('prod-author').value = product.author;
+    document.getElementById('prod-editorial').value = product.editorial;
+    document.getElementById('prod-stock').value = product.stock;
+    document.getElementById('prod-initial-rate-group').style.display = 'none';
+    document.getElementById('prod-currency-group').style.display = 'none';
+    document.getElementById('product-submit-label').textContent = 'Guardar Cambios';
+    UI.openModal('modal-new-product');
+  },
+
+  openNewProductModal() {
+    const form = document.getElementById('form-new-product');
+    form.reset();
+    delete form.dataset.editId;
+    document.getElementById('product-modal-title').textContent = 'Registrar Nuevo Producto';
+    document.getElementById('prod-initial-rate-group').style.display = '';
+    document.getElementById('prod-currency-group').style.display = '';
+    document.getElementById('product-submit-label').textContent = 'Guardar Producto';
+    UI.openModal('modal-new-product');
+  },
+
   async handleCreateProduct(e) {
     e.preventDefault();
 
+    const form = e.currentTarget;
+    const productId = form.dataset.editId;
     const payload = {
       product_type: document.getElementById('prod-type').value,
       name: document.getElementById('prod-name').value,
       author: document.getElementById('prod-author').value,
       editorial: document.getElementById('prod-editorial').value,
-      stock: parseInt(document.getElementById('prod-stock').value || 0, 10),
-      initial_rate: parseFloat(document.getElementById('prod-rate').value || 0),
-      currency: document.getElementById('prod-currency').value
+      stock: parseInt(document.getElementById('prod-stock').value || 0, 10)
     };
+    if (!productId) {
+      payload.initial_rate = parseFloat(document.getElementById('prod-rate').value || 0);
+      payload.currency = document.getElementById('prod-currency').value;
+    }
 
     try {
-      await API.createProduct(payload);
+      if (productId) await API.updateProduct(productId, payload);
+      else await API.createProduct(payload);
       UI.closeModal('modal-new-product');
-      UI.showToast('Producto registrado exitosamente', 'success');
-      e.target.reset();
+      UI.showToast(productId ? 'Producto actualizado exitosamente' : 'Producto registrado exitosamente', 'success');
+      form.reset();
+      delete form.dataset.editId;
+      document.getElementById('product-modal-title').textContent = 'Registrar Nuevo Producto';
+      document.getElementById('prod-initial-rate-group').style.display = '';
+      document.getElementById('prod-currency-group').style.display = '';
+      document.getElementById('product-submit-label').textContent = 'Guardar Producto';
       await this.loadInitialData();
       this.renderProductsList();
     } catch (error) {
@@ -796,13 +837,43 @@ const App = {
         <td><strong style="color: var(--text-main);">${c.full_name}</strong></td>
         <td>${c.address || '-'}</td>
         <td>${c.phone || '-'}</td>
+        <td class="admin-only-action" style="display: ${Auth.getCurrentUser()?.role === 'administrador' ? 'table-cell' : 'none'};">${Auth.getCurrentUser()?.role === 'administrador'
+          ? `<button class="btn btn-secondary btn-sm" onclick="App.openEditClient('${c.id}')">✏️ Editar</button>`
+          : ''}</td>
       </tr>
     `).join('');
+  },
+
+  openEditClient(clientId) {
+    const client = this.state.clients.find(item => item.id === clientId);
+    if (!client || Auth.getCurrentUser()?.role !== 'administrador') return;
+
+    const form = document.getElementById('form-new-client');
+    form.dataset.editId = client.id;
+    document.getElementById('client-modal-title').textContent = 'Editar Cliente';
+    document.getElementById('client-doc-type').value = client.doc_type;
+    document.getElementById('client-doc-number').value = client.doc_number;
+    document.getElementById('client-fullname').value = client.full_name;
+    document.getElementById('client-address').value = client.address || '';
+    document.getElementById('client-phone').value = client.phone || '';
+    document.getElementById('client-submit-label').textContent = 'Guardar Cambios';
+    UI.openModal('modal-new-client');
+  },
+
+  openNewClientModal() {
+    const form = document.getElementById('form-new-client');
+    form.reset();
+    delete form.dataset.editId;
+    document.getElementById('client-modal-title').textContent = 'Registrar Nuevo Cliente';
+    document.getElementById('client-submit-label').textContent = 'Guardar Cliente';
+    UI.openModal('modal-new-client');
   },
 
   async handleCreateClient(e) {
     e.preventDefault();
 
+    const form = e.currentTarget;
+    const clientId = form.dataset.editId;
     const payload = {
       doc_type: document.getElementById('client-doc-type').value,
       full_name: document.getElementById('client-fullname').value,
@@ -812,10 +883,14 @@ const App = {
     };
 
     try {
-      await API.createClient(payload);
+      if (clientId) await API.updateClient(clientId, payload);
+      else await API.createClient(payload);
       UI.closeModal('modal-new-client');
-      UI.showToast('Cliente registrado exitosamente', 'success');
-      e.target.reset();
+      UI.showToast(clientId ? 'Cliente actualizado exitosamente' : 'Cliente registrado exitosamente', 'success');
+      form.reset();
+      delete form.dataset.editId;
+      document.getElementById('client-modal-title').textContent = 'Registrar Nuevo Cliente';
+      document.getElementById('client-submit-label').textContent = 'Guardar Cliente';
       await this.loadInitialData();
       this.renderClientsList();
     } catch (error) {
@@ -827,6 +902,11 @@ const App = {
   // CATÁLOGO DE TARIFAS
   // ==========================================
   openNewRateModal() {
+    const form = document.getElementById('form-new-rate');
+    delete form.dataset.editId;
+    document.getElementById('rate-modal-title').textContent = 'Registrar Nueva Tarifa';
+    document.getElementById('rate-submit-label').textContent = 'Guardar Tarifa';
+    form.reset();
     const select = document.getElementById('rate-product-id');
     if (select) {
       select.innerHTML = '<option value="">-- Selecciona un Producto --</option>' +
@@ -837,12 +917,27 @@ const App = {
     UI.openModal('modal-new-rate');
   },
 
+  openEditRate(rateId) {
+    const rate = this.state.rates.find(item => item.id === rateId);
+    if (!rate || Auth.getCurrentUser()?.role !== 'administrador') return;
+
+    this.openNewRateModal();
+    const form = document.getElementById('form-new-rate');
+    form.dataset.editId = rate.id;
+    document.getElementById('rate-modal-title').textContent = 'Editar Tarifa';
+    document.getElementById('rate-product-id').value = rate.product_id;
+    document.getElementById('rate-amount').value = rate.amount;
+    document.getElementById('rate-currency').value = rate.currency;
+    document.getElementById('rate-submit-label').textContent = 'Guardar Cambios';
+  },
+
   renderRatesList() {
     const tbody = document.getElementById('rates-table-tbody');
     if (!tbody) return;
 
     if (!this.state.rates || this.state.rates.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-dim);">No hay tarifas registradas.</td></tr>`;
+      const columns = Auth.getCurrentUser()?.role === 'administrador' ? 5 : 4;
+      tbody.innerHTML = `<tr><td colspan="${columns}" style="text-align: center; padding: 2rem; color: var(--text-dim);">No hay tarifas registradas.</td></tr>`;
       return;
     }
 
@@ -855,6 +950,9 @@ const App = {
         <td><span class="badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); font-weight: 600;">${prodType}</span></td>
         <td><strong style="font-family: var(--font-mono); color: #34d399;">${r.currency} ${parseFloat(r.amount).toFixed(2)}</strong></td>
         <td>${r.currency}</td>
+        <td class="admin-only-action" style="display: ${Auth.getCurrentUser()?.role === 'administrador' ? 'table-cell' : 'none'};">${Auth.getCurrentUser()?.role === 'administrador'
+          ? `<button class="btn btn-secondary btn-sm" onclick="App.openEditRate('${r.id}')">✏️ Editar</button>`
+          : ''}</td>
       </tr>
     `}).join('');
   },
@@ -862,6 +960,8 @@ const App = {
   async handleCreateRate(e) {
     e.preventDefault();
 
+    const form = e.currentTarget;
+    const rateId = form.dataset.editId;
     const payload = {
       product_id: document.getElementById('rate-product-id').value,
       amount: parseFloat(document.getElementById('rate-amount').value),
@@ -869,10 +969,14 @@ const App = {
     };
 
     try {
-      await API.createRate(payload);
+      if (rateId) await API.updateRate(rateId, payload);
+      else await API.createRate(payload);
       UI.closeModal('modal-new-rate');
-      UI.showToast('Tarifa registrada con éxito', 'success');
-      e.target.reset();
+      UI.showToast(rateId ? 'Tarifa actualizada con éxito' : 'Tarifa registrada con éxito', 'success');
+      form.reset();
+      delete form.dataset.editId;
+      document.getElementById('rate-modal-title').textContent = 'Registrar Nueva Tarifa';
+      document.getElementById('rate-submit-label').textContent = 'Guardar Tarifa';
       await this.loadInitialData();
       this.renderRatesList();
     } catch (error) {

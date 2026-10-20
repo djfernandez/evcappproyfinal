@@ -1,4 +1,5 @@
 const http = require('http');
+const assert = require('assert');
 
 // Keep the API test suite isolated from a developer's configured cloud database.
 process.env.SUPABASE_URL = '';
@@ -82,6 +83,20 @@ const runTests = async () => {
     console.assert(vendedorCreateAttempt.status === 403, 'Vendedor no debe poder modificar catálogos maestros (debe dar 403)');
     console.log('✅ 3. Regla verificada: Vendedor tiene denegada la modificación de catálogos maestros (403 Forbidden)');
 
+    const supervisorProductUpdate = await request('/products/a0000001-0000-0000-0000-000000000001', 'PATCH', {
+      product_type: 'Libros', name: 'No autorizado', author: 'Autor', editorial: 'Editorial', stock: 1
+    }, { 'x-user-role': 'supervisor' });
+    const supervisorClientUpdate = await request('/clients/b0000001-0000-0000-0000-000000000001', 'PATCH', {
+      doc_type: 'RUC', full_name: 'No autorizado S.A.C.', doc_number: '20549876541'
+    }, { 'x-user-role': 'supervisor' });
+    const supervisorRateUpdate = await request('/rates/c0000001-0000-0000-0000-000000000001', 'PATCH', {
+      product_id: 'a0000001-0000-0000-0000-000000000001', amount: 1, currency: 'PEN'
+    }, { 'x-user-role': 'supervisor' });
+    assert.strictEqual(supervisorProductUpdate.status, 403, 'Supervisor no debe actualizar productos');
+    assert.strictEqual(supervisorClientUpdate.status, 403, 'Supervisor no debe actualizar clientes');
+    assert.strictEqual(supervisorRateUpdate.status, 403, 'Supervisor no debe actualizar tarifas');
+    console.log('✅ Supervisor no puede actualizar productos, clientes ni tarifas (403 Forbidden)');
+
     // 4. Regla RUC Inválido con rol Administrador (debe dar 400 por no iniciar con 10 o 20)
     const invalidRuc = await request('/clients', 'POST', {
       doc_type: 'RUC',
@@ -156,6 +171,30 @@ const runTests = async () => {
     console.assert(approval.status === 200, 'Error al aprobar cotización como supervisor');
     console.assert(approval.data.quotation.status === 'aprobado', 'El estado debió cambiar a aprobado');
     console.log(`✅ 7. Flujo de aprobación por Supervisor verificado con éxito (Estado: ${approval.data.quotation.status})`);
+
+    const productUpdate = await request('/products/a0000001-0000-0000-0000-000000000001', 'PATCH', {
+      product_type: 'Libros',
+      name: 'Gestión Financiera para Empresas B2B (Actualizado)',
+      author: 'Alejandro Morales',
+      editorial: 'Editorial Planeta Pro',
+      stock: 84
+    }, { 'x-user-role': 'administrador' });
+    const clientUpdate = await request('/clients/b0000001-0000-0000-0000-000000000001', 'PATCH', {
+      doc_type: 'RUC',
+      full_name: 'Corporación Minera del Sur S.A.C. (Actualizado)',
+      doc_number: '20549876541',
+      address: 'Av. Las Begonias 441, San Isidro, Lima',
+      phone: '+51 1 612-4000'
+    }, { 'x-user-role': 'administrador' });
+    const rateUpdate = await request('/rates/c0000001-0000-0000-0000-000000000001', 'PATCH', {
+      product_id: 'a0000001-0000-0000-0000-000000000001',
+      amount: 146,
+      currency: 'PEN'
+    }, { 'x-user-role': 'administrador' });
+    assert.strictEqual(productUpdate.status, 200, 'Administrador debe actualizar productos');
+    assert.strictEqual(clientUpdate.status, 200, 'Administrador debe actualizar clientes');
+    assert.strictEqual(rateUpdate.status, 200, 'Administrador debe actualizar tarifas');
+    console.log('✅ Administrador puede actualizar productos, clientes y tarifas');
 
     console.log('\n🎉 ¡TODAS LAS PRUEBAS DE LA API Y REGLAS DE NEGOCIO PASARON EXITOSAMENTE!\n');
   } catch (error) {

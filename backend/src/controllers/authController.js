@@ -46,23 +46,14 @@ const login = async (req, res) => {
       }
     }
 
-    // Búsqueda en profiles (en Supabase o en memoryStore)
     if (isConfigured) {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`email.eq.${normalizedEmail},email.eq.${rawInput}`)
-        .single();
-
-      if (!error && profile) {
-        return res.json({
-          success: true,
-          user: profile,
-          token: `token-${profile.id}`
-        });
-      }
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciales inválidas. Verifica tu correo y contraseña de Supabase Auth.'
+      });
     }
 
+    // Búsqueda en profiles (en Supabase o en memoryStore)
     // Modo local / demo: encontrar por email normalizado o rol
     const localUser = memoryStore.profiles.find(
       p => p.email.toLowerCase() === normalizedEmail ||
