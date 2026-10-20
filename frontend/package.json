@@ -1,0 +1,12 @@
+{
+  "name": "nexus-sac-frontend",
+  "version": "1.0.0",
+  "description": "Frontend web SPA para el MVP B2B Nexus SAC de Cotizaciones",
+  "scripts": {
+    "start": "npx serve public -l 5000",
+    "dev": "npx serve public -l 5000"
+  },
+  "keywords": ["nexus-sac", "quotations", "b2b", "frontend"],
+  "author": "Nexus SAC",
+  "license": "ISC"
+}

@@ -1,0 +1,72 @@
+# ========================================================
+# Nexus SAC - B2B Quotation System (.gitignore)
+# ========================================================
+
+# Dependencias de paquetes
+node_modules/
+*/node_modules/
+package-lock.json.bak
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Entorno y Secretos (CRÍTICO: nunca subir credenciales reales)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+backend/.env.local
+*.env
+*.env.*
+!.env.example
+!backend/.env.example
+
+# Logs y bases de datos locales temporales
+logs/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Directorios de compilación y cobertura de pruebas
+dist/
+build/
+coverage/
+.nyc_output/
+.temp/
+scratch/
+
+# Archivos del Sistema Operativo
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+
+# Configuraciones de Entorno de Desarrollo (IDEs)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

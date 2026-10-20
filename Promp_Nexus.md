@@ -1,0 +1,68 @@
+## Prompt
+
+- **Actuar como:** Ingeniero Full Stack especializado en aplicaciones web B2B.
+- **Objetivo:** Diseñar e implementar un MVP de página web ligera que centralice el proceso de cotización, reduzca tiempos de respuesta y minimice errores manuales.
+- **Contexto:** Proyecto construido con Node.JS (frontend) y Supabase (backend + base de datos + autenticación), crear 2 carpetas una para frontend (Node.JS) y otra para backend (Supabase). En la carpeta de backend se debe crear la base de datos con las tablas necesarias para el funcionamiento del MVP, en la carpeta de frontend se debe crear la página web con HTML, CSS y JavaScript. En caso de Supabase se puede usar las tools disponibles en Antigravity para la creacion de la base de datos y las tablas. Todo el proyecto debe estar en un solo repositorio.
+- **Especificaciones:**
+  - Autenticación y Login
+    - Formulario de acceso con validación de credenciales.
+    - Modo seguro
+    - Gestión de roles (vendedor, supervisor, administrador).
+  - Cotizaciones
+    - Formularios dinámicos, fáciles de usar y responsivos.
+    - Cálculo automático de tarifas según stock, descuentos y reglas de negocio.
+    - Lógica de negocio integrada para aplicar condiciones de precios y descuentos.
+    - Flujo de aprobaciones para solicitudes especiales (ej. descuentos fuera de lo estándar).
+  - Catálogo de Productos
+    - Campos mínimos:
+      - Id autogenerado
+      - Tipo de producto (Libros, Revistas o Pruebas)
+      - Nombre del producto
+      - Autor
+      - Editorial
+      - Stock actual del producto
+  - Catálogo de Clientes
+    - Campos mínimos:
+      - Id autogenerado
+      - Tipo de documento (DNI o RUC)
+      - Nombres completo o Razón social
+      - Numero de documento, como máximo 15 caracteres y el numero de RUC debe iniciar con 10 o 20
+      - Dirección
+      - Teléfono
+  - Catálogo de Tarifas
+    - Campos mínimos:
+      - Id autogenerado
+      - Id del producto
+      - Monto de tarifa
+      - Moneda
+  - Catálogo de Cotizaciones
+    - Campos mínimos:
+      - Cabecera
+        - Id autogenerado
+        - Id Cliente
+        - Numero de cotización, debe comenzar con el Año y un numero de correlativo (se debe reiniciar por año)
+        - Fecha de la cotización
+        - Fecha de vencimiento de la cotización
+        - Referencias
+        - Total
+        - Igv
+        - Estado de la cotización (pendiente, aprobado, rechazado)
+        - Moneda
+      - Detalle
+        - Id autogenerado
+        - Id Cabecera
+        - Id Producto
+        - Id Tarifa
+        - Cantidad
+        - Precio
+        - Sub Total (Cantida por precio)
+- **Reglas de Negocio:**
+  - Número de cotización: generado automáticamente con trigger en DB (ej. 2026-0001).
+  - Validación RUC: debe iniciar con 10 o 20.
+  - Descuentos fuera de rango: generan automáticamente una solicitud en el flujo de aprobaciones.
+  - Roles: vendedores crean cotizaciones, supervisores aprueban.
+  - Generar la cotización en PDF
+- **Restricciones:**
+  - Usar HTML, CSS y JavaScript para el frontend
+  - Usar Node.JS para el backend
+  - Usar Supabase para la base de datos

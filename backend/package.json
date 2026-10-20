@@ -1,0 +1,20 @@
+{
+  "name": "nexus-sac-backend",
+  "version": "1.0.0",
+  "description": "Backend API y conexión Supabase para el MVP B2B Nexus SAC",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test/api.test.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "keywords": ["b2b", "quotations", "supabase", "nexus-sac"],
+  "author": "Nexus SAC",
+  "license": "ISC"
+}
