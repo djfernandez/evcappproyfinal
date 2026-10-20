@@ -126,9 +126,19 @@ BEGIN
         current_year := EXTRACT(YEAR FROM COALESCE(NEW.quotation_date, CURRENT_DATE))::INTEGER;
 
         INSERT INTO public.quotation_sequences (year_val, current_value)
-        VALUES (current_year, 1)
+        VALUES (
+            current_year,
+            COALESCE((
+                SELECT MAX(substring(quotation_number FROM '^[0-9]{4}-([0-9]+)$')::INTEGER)
+                FROM public.quotations
+                WHERE quotation_number ~ ('^' || current_year::TEXT || '-[0-9]+$')
+            ), 0) + 1
+        )
         ON CONFLICT (year_val)
-        DO UPDATE SET current_value = public.quotation_sequences.current_value + 1
+        DO UPDATE SET current_value = GREATEST(
+            public.quotation_sequences.current_value,
+            EXCLUDED.current_value - 1
+        ) + 1
         RETURNING current_value INTO next_correlative;
 
         NEW.quotation_number := current_year || '-' || LPAD(next_correlative::TEXT, 4, '0');

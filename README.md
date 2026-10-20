@@ -121,6 +121,8 @@ La URL prevista de Pages es [https://djfernandez.github.io/evcappproyfinal/](htt
 
 El backend Express continúa disponible para desarrollo local y se configura con `SUPABASE_URL` y `SUPABASE_KEY` en `backend/.env`.
 
+Si al crear una cotización aparece `duplicate key value violates unique constraint "quotations_quotation_number_key"`, el contador anual puede estar atrasado respecto a cotizaciones ya guardadas. Ejecuta nuevamente `backend/database/02_triggers.sql` en el SQL Editor de Supabase para actualizar el generador; el siguiente intento elegirá un correlativo posterior a los números existentes.
+
 ---
 
 ## ⚖️ Reglas de Negocio Implementadas
