@@ -2,6 +2,8 @@
 
 > **MVP de aplicación web empresarial** desarrollada para centralizar el proceso de cotización comercial, automatizar el cálculo de tarifas e IGV, validar stock en tiempo real, aplicar flujos de aprobación para solicitudes de descuento especiales y emitir cotizaciones oficiales en PDF.
 
+🌐 **Demo en vivo en GitHub Pages**: [https://djfernandez.github.io/evcappproyfinal/](https://djfernandez.github.io/evcappproyfinal/)
+
 ---
 
 ## 🚀 Arquitectura y Tecnologías
