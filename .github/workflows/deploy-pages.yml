@@ -30,6 +30,17 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Configurar conexión pública de Supabase
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Configura SUPABASE_URL (Actions variable) y SUPABASE_ANON_KEY (Actions secret)."
+            exit 1
+          fi
+          node -e "const fs = require('fs'); const config = { url: process.env.SUPABASE_URL, anonKey: process.env.SUPABASE_ANON_KEY }; fs.writeFileSync('frontend/public/js/supabase-config.js', 'window.NEXUS_SUPABASE_CONFIG = ' + JSON.stringify(config) + ';\\n');"
+
       - name: Subir artefactos estáticos (frontend/public)
         uses: actions/upload-pages-artifact@v3
         with:

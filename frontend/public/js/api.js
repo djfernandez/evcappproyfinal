@@ -124,6 +124,27 @@
 
   MockDB.init();
 
+  const supabaseConfig = window.NEXUS_SUPABASE_CONFIG;
+  const hasSupabaseConfig = Boolean(supabaseConfig?.url && supabaseConfig?.anonKey);
+  const supabaseClient = hasSupabaseConfig && window.supabase?.createClient
+    ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
+    : null;
+
+  if (supabaseClient) window.SupabaseClient = supabaseClient;
+
+  async function getSupabaseData(query) {
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  async function getCurrentSupabaseUser() {
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) throw new Error(error.message);
+    if (!data.session) throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
+    return data.session.user;
+  }
+
   // Detección de entorno
   const isGitHubPages = window.location.hostname.includes('github.io');
   const customApiUrl = localStorage.getItem('nexus_api_base_url');
@@ -146,7 +167,29 @@
 
   window.API = {
     baseUrl: defaultBaseUrl,
-    forceMockMode: isGitHubPages && !customApiUrl,
+    usesSupabase: Boolean(supabaseClient),
+    forceMockMode: isGitHubPages && !customApiUrl && !hasSupabaseConfig,
+
+    async restoreSession() {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw new Error(error.message);
+      if (!data.session) {
+        localStorage.removeItem('nexus_user');
+        localStorage.removeItem('nexus_token');
+        return null;
+      }
+
+      const profile = await getSupabaseData(
+        supabaseClient.from('profiles').select('*').eq('id', data.session.user.id).maybeSingle()
+      );
+      if (!profile) {
+        await supabaseClient.auth.signOut();
+        localStorage.removeItem('nexus_user');
+        localStorage.removeItem('nexus_token');
+        throw new Error('Tu cuenta de Supabase Auth no tiene un perfil de Nexus asignado.');
+      }
+      return profile;
+    },
 
     setBackendUrl(url) {
       if (!url) {
@@ -171,6 +214,9 @@
     },
 
     async request(endpoint, options = {}) {
+      if (hasSupabaseConfig && !supabaseClient) {
+        throw new Error('No se pudo cargar el SDK de Supabase. Recarga la página o revisa la conexión.');
+      }
       // Si estamos forzados en Mock Mode (ej. GitHub Pages sin URL remota)
       if (this.forceMockMode) {
         notifyMockMode('GitHub Pages');
@@ -442,6 +488,21 @@
 
     // Métodos públicos del cliente de API
     async login(email, password) {
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(error.message);
+
+        const { data: profile, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+        if (profileError || !profile) {
+          await supabaseClient.auth.signOut();
+          throw new Error(profileError?.message || 'La cuenta no tiene un perfil de Nexus asignado.');
+        }
+        return { success: true, user: profile, token: data.session.access_token };
+      }
       return this.request('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
@@ -449,15 +510,63 @@
     },
 
     async getDemoUsers() {
+      if (supabaseClient) {
+        const users = await getSupabaseData(supabaseClient.from('profiles').select('*').order('full_name'));
+        return { success: true, users };
+      }
       return this.request('/auth/users');
     },
 
     async getProducts(params = {}) {
+      if (supabaseClient) {
+        let query = supabaseClient.from('products').select('*, rates(*)').order('name');
+        if (params.type) query = query.eq('product_type', params.type);
+        let products = await getSupabaseData(query);
+        if (params.search) {
+          const search = params.search.toLowerCase();
+          products = products.filter(product =>
+            [product.name, product.author, product.editorial].some(value => value?.toLowerCase().includes(search))
+          );
+        }
+        products = products.map(product => {
+          const rates = (product.rates || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const latestRate = rates[0];
+          return {
+            ...product,
+            rates,
+            rate: latestRate ? Number(latestRate.amount) : null,
+            rate_id: latestRate?.id || null,
+            currency: latestRate?.currency || 'PEN'
+          };
+        });
+        return { success: true, products };
+      }
       const query = new URLSearchParams(params).toString();
       return this.request(`/products${query ? `?${query}` : ''}`);
     },
 
     async createProduct(productData) {
+      if (supabaseClient) {
+        const product = await getSupabaseData(
+          supabaseClient.from('products').insert([{
+            product_type: productData.product_type,
+            name: productData.name,
+            author: productData.author,
+            editorial: productData.editorial,
+            stock: productData.stock
+          }]).select().single()
+        );
+        if (productData.initial_rate) {
+          await getSupabaseData(
+            supabaseClient.from('rates').insert([{
+              product_id: product.id,
+              amount: productData.initial_rate,
+              currency: productData.currency || 'PEN'
+            }])
+          );
+        }
+        return { success: true, product };
+      }
       return this.request('/products', {
         method: 'POST',
         body: JSON.stringify(productData)
@@ -465,11 +574,29 @@
     },
 
     async getClients(params = {}) {
+      if (supabaseClient) {
+        let clients = await getSupabaseData(
+          supabaseClient.from('clients').select('*').order('full_name')
+        );
+        if (params.search) {
+          const search = params.search.toLowerCase();
+          clients = clients.filter(client =>
+            client.full_name.toLowerCase().includes(search) || client.doc_number.includes(search)
+          );
+        }
+        return { success: true, clients };
+      }
       const query = new URLSearchParams(params).toString();
       return this.request(`/clients${query ? `?${query}` : ''}`);
     },
 
     async createClient(clientData) {
+      if (supabaseClient) {
+        const client = await getSupabaseData(
+          supabaseClient.from('clients').insert([clientData]).select().single()
+        );
+        return { success: true, client };
+      }
       return this.request('/clients', {
         method: 'POST',
         body: JSON.stringify(clientData)
@@ -477,11 +604,33 @@
     },
 
     async getRates(params = {}) {
+      if (supabaseClient) {
+        let query = supabaseClient
+          .from('rates')
+          .select('*, products(name, product_type)')
+          .order('created_at', { ascending: false });
+        if (params.product_id) query = query.eq('product_id', params.product_id);
+        const rates = await getSupabaseData(query);
+        return {
+          success: true,
+          rates: rates.map(rate => ({
+            ...rate,
+            product_name: rate.products?.name || 'Desconocido',
+            product_type: rate.products?.product_type || '-'
+          }))
+        };
+      }
       const query = new URLSearchParams(params).toString();
       return this.request(`/rates${query ? `?${query}` : ''}`);
     },
 
     async createRate(rateData) {
+      if (supabaseClient) {
+        const rate = await getSupabaseData(
+          supabaseClient.from('rates').insert([rateData]).select().single()
+        );
+        return { success: true, rate };
+      }
       return this.request('/rates', {
         method: 'POST',
         body: JSON.stringify(rateData)
@@ -489,15 +638,44 @@
     },
 
     async getQuotations(params = {}) {
+      if (supabaseClient) {
+        let query = supabaseClient.from('quotations').select(`
+          *,
+          clients(*),
+          profiles:profiles!quotations_created_by_fkey(id, full_name, email, role),
+          approver:profiles!quotations_approved_by_fkey(id, full_name, email),
+          quotation_items(*, products(id, name, product_type, stock), rates(id, amount, currency))
+        `).order('created_at', { ascending: false });
+        if (params.status) query = query.eq('status', params.status);
+        if (params.client_id) query = query.eq('client_id', params.client_id);
+        const quotations = await getSupabaseData(query);
+        return { success: true, quotations };
+      }
       const query = new URLSearchParams(params).toString();
       return this.request(`/quotations${query ? `?${query}` : ''}`);
     },
 
     async getQuotation(id) {
+      if (supabaseClient) {
+        const quotation = await getSupabaseData(
+          supabaseClient.from('quotations').select(`
+            *,
+            clients(*),
+            profiles:profiles!quotations_created_by_fkey(id, full_name, email, role),
+            approver:profiles!quotations_approved_by_fkey(id, full_name, email),
+            quotation_items(*, products(id, name, product_type, author, editorial, stock), rates(id, amount, currency))
+          `).eq('id', id).single()
+        );
+        return { success: true, quotation };
+      }
       return this.request(`/quotations/${id}`);
     },
 
     async createQuotation(quotationData) {
+      if (supabaseClient) {
+        await getCurrentSupabaseUser();
+        return getSupabaseData(supabaseClient.rpc('create_quotation', { p_payload: quotationData }));
+      }
       return this.request('/quotations', {
         method: 'POST',
         body: JSON.stringify(quotationData)
@@ -505,10 +683,24 @@
     },
 
     async updateQuotationStatus(id, status, notes) {
+      if (supabaseClient) {
+        await getCurrentSupabaseUser();
+        return getSupabaseData(supabaseClient.rpc('review_quotation', {
+          p_quotation_id: id,
+          p_status: status,
+          p_approval_notes: notes || ''
+        }));
+      }
       return this.request(`/quotations/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status, approval_notes: notes })
       });
+    },
+
+    async logout() {
+      if (!supabaseClient) return;
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) throw new Error(error.message);
     }
   };
 })();

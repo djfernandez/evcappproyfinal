@@ -90,6 +90,10 @@
       Seleccionar Cuenta / Rol de Acceso
     </div>
 
+    <p id="supabase-login-note" style="display: none; font-size: 0.78rem; color: var(--text-dim); margin-top: 0.75rem;">
+      Usa tu cuenta de Supabase Auth asignada por el administrador.
+    </p>
+
     <div class="demo-account-pill" onclick="quickLogin('vendedor@nexussac.pe')">
       <div>
         <strong style="color: var(--text-main);">Carlos Mendoza</strong>
@@ -118,9 +122,17 @@
 
 <div id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script>
+  if (API.usesSupabase) {
+    document.querySelectorAll('.demo-account-pill').forEach((pill) => { pill.style.display = 'none'; });
+    document.getElementById('supabase-login-note').style.display = 'block';
+    document.getElementById('login-password').value = '';
+  }
+
   async function performLogin(email, password = '••••••••') {
     const errorBox = document.getElementById('login-error-msg');
     const submitBtn = document.getElementById('btn-login-submit');

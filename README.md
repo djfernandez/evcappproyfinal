@@ -62,6 +62,7 @@ proyfinal/
     │   ├── js/
     │   │   ├── api.js              # Cliente fetch al backend
     │   │   ├── auth.js             # Gestión de roles (RBAC) y sesión
+    │   │   ├── supabase-config.js  # Configuración pública generada en Actions
     │   │   ├── pdf-generator.js    # Generación y descarga directa en PDF
     │   │   └── app.js              # Controlador principal SPA
     │   ├── index.html              # Dashboard y módulos de la aplicación
@@ -99,18 +100,26 @@ npm test
 
 ---
 
-## 🗄️ Configuración de Supabase (Opcional para producción)
+## 🗄️ GitHub Pages y conexión con Supabase
 
-1. Ingresa a tu proyecto en [Supabase Console](https://supabase.com).
-2. Ve al **SQL Editor** y copia el contenido completo del archivo [`backend/database/setup_all.sql`](file:///c:/Personal/Estudio/Dmc/Esp-Vibe-Coding-App/Antigravity/proyfinal/backend/database/setup_all.sql).
-3. Haz clic en **Run** para crear las tablas, triggers correlativos, políticas RLS y datos iniciales.
-4. En el archivo `backend/.env`, coloca tus credenciales:
-   ```env
-   PORT=3000
-   SUPABASE_URL=https://tu-proyecto.supabase.co
-   SUPABASE_KEY=tu-anon-key-de-supabase
+GitHub Pages sirve el frontend estático. La conexión de producción se hace desde el navegador con Supabase Auth y la clave pública `anon`; no se requiere alojar el backend Node para esta modalidad.
+
+1. En Supabase, abre **SQL Editor** y ejecuta [`backend/database/05_github_pages_security.sql`](./backend/database/05_github_pages_security.sql). Es obligatorio, especialmente si se ejecutó `setup_all.sql`: esa configuración inicial habilita políticas de demostración públicas y esta migración las reemplaza por políticas RLS para usuarios autenticados.
+2. En **Authentication → Users**, crea una cuenta por cada usuario. Copia el UUID de cada usuario y, desde SQL Editor, inserta el perfil asociado:
+   ```sql
+   INSERT INTO public.profiles (id, email, full_name, role)
+   VALUES ('UUID-DE-AUTH', 'usuario@empresa.com', 'Nombre Apellido', 'administrador');
    ```
-5. Reinicia el servidor backend (`npm start`). El servidor detectará automáticamente la conexión a Supabase Cloud.
+   Usa el UUID exacto de Auth y asigna un rol válido: `vendedor`, `supervisor` o `administrador`. Los perfiles de demostración sembrados no son cuentas de Supabase Auth.
+3. En GitHub, abre **Settings → Secrets and variables → Actions** y configura:
+   - Variable `SUPABASE_URL`: URL del proyecto, por ejemplo `https://xxxx.supabase.co`.
+   - Secret `SUPABASE_ANON_KEY`: clave publicable/anon del proyecto. **Nunca** uses `service_role` en GitHub Pages ni en ningún frontend.
+4. En **Settings → Pages**, selecciona **GitHub Actions** como fuente de publicación.
+5. El workflow [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml) publica `frontend/public` al hacer push a `main` o al ejecutarlo manualmente desde **Actions**. Falla explícitamente si faltan las dos variables de Supabase.
+
+La URL prevista de Pages es [https://djfernandez.github.io/evcappproyfinal/](https://djfernandez.github.io/evcappproyfinal/). En desarrollo local, sin `supabase-config.js` configurado, la app conserva el modo demo; para el despliegue, Actions genera ese archivo a partir de la configuración de GitHub y lo incluye en el artefacto.
+
+El backend Express continúa disponible para desarrollo local y se configura con `SUPABASE_URL` y `SUPABASE_KEY` en `backend/.env`.
 
 ---
 

@@ -56,9 +56,20 @@ const App = {
   async init() {
     console.log('🚀 Inicializando Nexus SAC Frontend...');
     this.setupEventListeners();
-    const currentUser = Auth.getCurrentUser();
-    if (!currentUser) return; // Redirige automáticamente a login.html
-    Auth.updateUserUI(currentUser);
+    let currentUser;
+    try {
+      currentUser = API.usesSupabase ? await API.restoreSession() : Auth.getCurrentUser();
+    } catch (error) {
+      console.error('Error restaurando sesión de Supabase:', error);
+      UI.showToast(error.message, 'error');
+      setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+      return;
+    }
+    if (!currentUser) {
+      window.location.href = 'login.html';
+      return;
+    }
+    Auth.setCurrentUser(currentUser);
     await this.loadInitialData();
     this.navigate('dashboard');
   },

@@ -33,11 +33,19 @@ const Auth = {
 
   setCurrentUser(user) {
     localStorage.setItem('nexus_user', JSON.stringify(user));
-    localStorage.setItem('nexus_token', `token-${user.id}`);
+    if (window.API?.usesSupabase) {
+      localStorage.removeItem('nexus_token');
+    } else {
+      localStorage.setItem('nexus_token', `token-${user.id}`);
+    }
     this.updateUserUI(user);
   },
 
   switchRole(role) {
+    if (window.API?.usesSupabase) {
+      UI.showToast('El rol se determina por tu perfil de Supabase.', 'warning');
+      return;
+    }
     const user = this.defaultUsers.find(u => u.role === role) || this.defaultUsers[0];
     this.setCurrentUser(user);
     if (window.App) {
@@ -46,7 +54,14 @@ const Auth = {
     UI.showToast(`Rol cambiado a: ${user.role.toUpperCase()} (${user.full_name})`, 'info');
   },
 
-  logout() {
+  async logout() {
+    try {
+      if (window.API?.usesSupabase) await API.logout();
+    } catch (error) {
+      console.error('Error al cerrar sesión de Supabase:', error);
+      UI.showToast(`No se pudo cerrar la sesión: ${error.message}`, 'error');
+      return;
+    }
     localStorage.removeItem('nexus_user');
     localStorage.removeItem('nexus_token');
     window.location.href = 'login.html';

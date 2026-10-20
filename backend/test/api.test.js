@@ -1,4 +1,10 @@
 const http = require('http');
+
+// Keep the API test suite isolated from a developer's configured cloud database.
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_KEY = '';
+process.env.SUPABASE_ANON_KEY = '';
+
 const app = require('../src/server');
 
 const runTests = async () => {

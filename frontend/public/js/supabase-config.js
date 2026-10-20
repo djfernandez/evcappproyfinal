@@ -1,0 +1,1 @@
+window.NEXUS_SUPABASE_CONFIG = window.NEXUS_SUPABASE_CONFIG || null;
