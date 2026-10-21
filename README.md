@@ -35,24 +35,32 @@ El proyecto está organizado en un solo repositorio con dos carpetas independien
 ```
 proyfinal/
 ├── .gitignore                      # Exclusión de dependencias, .env y temporales
+├── .github/
+│   └── workflows/
+│       └── deploy-pages.yml        # Despliegue del frontend en GitHub Pages
 ├── LICENSE                         # Licencia MIT (2026 Nexus SAC)
 ├── README.md                       # Documentación del proyecto
+├── Especificacion_Tecnica_Nexus.md # Requerimientos funcionales del MVP
+├── Promp_Nexus.md                  # Prompt y alcance original del proyecto
+├── Proyecto final.txt              # Enunciado del proyecto
+├── Product Brief.png               # Brief visual del producto
 ├── backend/
 │   ├── database/
 │   │   ├── 01_schema.sql           # Tablas y restricciones DDL
 │   │   ├── 02_triggers.sql         # Trigger correlativo anual (YYYY-0001)
 │   │   ├── 03_rls_security.sql     # Políticas RLS por rol
 │   │   ├── 04_seed_data.sql        # Datos semilla para pruebas
+│   │   ├── 05_github_pages_security.sql # Políticas para el frontend publicado
 │   │   └── setup_all.sql           # Script todo-en-uno para Supabase SQL Editor
 │   ├── src/
 │   │   ├── config/supabase.js      # Conector Supabase + almacenamiento local
-│   │   ├── controllers/            # Controladores de productos, clientes, tarifas, cotizaciones y auth
+│   │   ├── controllers/            # Controladores de auth, productos, clientes, tarifas y cotizaciones
 │   │   ├── middleware/auth.js      # Validación de roles y tokens
 │   │   ├── routes/api.js           # Endpoints de la API REST
 │   │   └── server.js               # Servidor Express principal
 │   ├── test/api.test.js            # Suite de pruebas automatizadas
-│   ├── .env.example                # Variables de entorno de ejemplo
-│   └── package.json
+│   ├── package.json
+│   └── package-lock.json
 │
 └── frontend/
     ├── public/
@@ -97,6 +105,8 @@ Para validar las reglas de negocio, validaciones de RUC y flujos de aprobación:
 ```bash
 npm test
 ```
+
+La suite automatizada está en `backend/test/api.test.js` y utiliza el almacenamiento local si no hay credenciales de Supabase configuradas.
 
 ---
 
@@ -156,4 +166,4 @@ Si al crear una cotización aparece `duplicate key value violates unique constra
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia **MIT** - consulta el archivo [`LICENSE`](file:///c:/Personal/Estudio/Dmc/Esp-Vibe-Coding-App/Antigravity/proyfinal/LICENSE) para más detalles.
+Este proyecto está bajo la Licencia **MIT** - consulta el archivo [`LICENSE`](./LICENSE) para más detalles.
