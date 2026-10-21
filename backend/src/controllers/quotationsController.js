@@ -240,11 +240,25 @@ const createQuotation = async (req, res) => {
         created_by: creatorId
       };
 
-      const { data: quotation, error: qErr } = await supabase
+      let { data: quotation, error: qErr } = await supabase
         .from('quotations')
         .insert([insertPayload])
         .select()
         .single();
+
+      // Defensa en profundidad: si por una race condition el número ya existía,
+      // reintenta una vez. El trigger habrá avanzado el contador en ese momento.
+      if (qErr && qErr.code === '23505' && qErr.constraint === 'quotations_quotation_number_key') {
+        console.warn('Colisión de quotation_number detectada — reintentando automáticamente...');
+        const { data: retryData, error: retryErr } = await supabase
+          .from('quotations')
+          .insert([insertPayload])
+          .select()
+          .single();
+        if (retryErr) throw retryErr;
+        quotation = retryData;
+        qErr = null;
+      }
 
       if (qErr) throw qErr;
 

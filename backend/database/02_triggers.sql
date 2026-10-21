@@ -40,10 +40,13 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 
 -- Función y Trigger para generar el Número Correlativo Anual (ej: 2026-0001)
+-- CORRECCIÓN: Usa bloqueo pessimista (INSERT + UPDATE...RETURNING) en lugar de
+-- un MAX() sobre quotations dentro del INSERT...ON CONFLICT.
+-- Esto elimina la race condition que causaba "duplicate key" en inserciones concurrentes.
 CREATE OR REPLACE FUNCTION public.generate_quotation_number()
 RETURNS TRIGGER AS $$
 DECLARE
-    current_year INTEGER;
+    current_year     INTEGER;
     next_correlative INTEGER;
 BEGIN
     -- Solo generar si quotation_number no fue provisto explícitamente
@@ -51,21 +54,17 @@ BEGIN
         -- Obtener el año de la fecha de la cotización (o año actual si no se definió)
         current_year := EXTRACT(YEAR FROM COALESCE(NEW.quotation_date, CURRENT_DATE))::INTEGER;
 
-        -- Mantener el contador por delante de los números ya guardados.
+        -- Crear la fila del año si aún no existe (sin bloquear otras transacciones)
         INSERT INTO public.quotation_sequences (year_val, current_value)
-        VALUES (
-            current_year,
-            COALESCE((
-                SELECT MAX(substring(quotation_number FROM '^[0-9]{4}-([0-9]+)$')::INTEGER)
-                FROM public.quotations
-                WHERE quotation_number ~ ('^' || current_year::TEXT || '-[0-9]+$')
-            ), 0) + 1
-        )
-        ON CONFLICT (year_val)
-        DO UPDATE SET current_value = GREATEST(
-            public.quotation_sequences.current_value,
-            EXCLUDED.current_value - 1
-        ) + 1
+        VALUES (current_year, 0)
+        ON CONFLICT (year_val) DO NOTHING;
+
+        -- UPDATE atómico: adquiere bloqueo exclusivo sobre la fila del año e incrementa.
+        -- Cualquier inserción concurrente esperará aquí hasta que la transacción actual
+        -- haga commit/rollback, garantizando un correlativo distinto para cada una.
+        UPDATE public.quotation_sequences
+        SET    current_value = current_value + 1
+        WHERE  year_val = current_year
         RETURNING current_value INTO next_correlative;
 
         -- Formato requerido: AÑO-CORRELATIVO con padding de 4 dígitos (ej: 2026-0001)
