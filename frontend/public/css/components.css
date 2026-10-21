@@ -320,3 +320,111 @@
   margin-bottom: 1.5rem;
   font-size: 0.85rem;
 }
+
+@media (max-width: 767px) {
+  .summary-row {
+    gap: 0.75rem;
+  }
+
+  .summary-row > :last-child {
+    text-align: right;
+  }
+
+  .item-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 1rem 0;
+  }
+
+  .item-row-header {
+    display: none;
+  }
+
+  .item-row > div:first-child,
+  .item-row > div:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .item-row > div:nth-child(2)::before,
+  .item-row > div:nth-child(3)::before,
+  .item-row > div:nth-child(4)::before {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--text-dim);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .item-row > div:nth-child(2)::before {
+    content: "Cantidad";
+  }
+
+  .item-row > div:nth-child(3)::before {
+    content: "Precio unit.";
+  }
+
+  .item-row > div:nth-child(4)::before {
+    content: "Subtotal";
+  }
+
+  .item-row > div:last-child {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 600px) {
+  .summary-card {
+    padding: 1rem;
+  }
+
+  .approval-card {
+    padding: 1rem;
+  }
+
+  .approval-card-header,
+  .approval-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .approval-actions {
+    align-self: stretch;
+    flex-wrap: wrap;
+  }
+
+  .approval-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .pdf-preview-canvas {
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  .pdf-header {
+    gap: 1rem;
+    flex-direction: column;
+  }
+
+  .pdf-quote-details {
+    text-align: left;
+  }
+
+  .pdf-table {
+    min-width: 520px;
+  }
+
+  .pdf-totals-table {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .summary-card {
+    position: static;
+  }
+}

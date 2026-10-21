@@ -17,7 +17,7 @@
   <!-- ====================================================
        BARRA LATERAL / SIDEBAR
        ==================================================== -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="app-sidebar">
     <div class="brand-header">
       <div class="brand-logo-icon">NX</div>
       <div class="brand-titles">
@@ -82,6 +82,7 @@
       </button>
     </div>
   </aside>
+  <button class="sidebar-backdrop" type="button" aria-label="Cerrar menú"></button>
 
   <!-- ====================================================
        ÁREA PRINCIPAL DE CONTENIDO
@@ -90,6 +91,9 @@
 
     <!-- Header Superior con Selector Rápido de Rol y Logout -->
     <header class="top-header">
+      <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-controls="app-sidebar" aria-expanded="false">
+        <span aria-hidden="true">☰</span>
+      </button>
       <div class="page-title">
         <h2 id="header-page-title">Central de Cotizaciones B2B</h2>
       </div>
@@ -191,7 +195,7 @@
               
               <!-- Columna Izquierda: Datos y Líneas de Productos -->
               <div>
-                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="quotation-fields-grid quotation-fields-grid--three" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                   <!-- Selector de Cliente con botón de registro rápido -->
                   <div>
                     <label class="form-label" for="quote-client-select">Cliente (Razón Social o DNI/RUC) *</label>
@@ -216,7 +220,7 @@
                   </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="quotation-fields-grid quotation-fields-grid--two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                   <div>
                     <label class="form-label" for="quote-currency">Moneda</label>
                     <select class="form-select" id="quote-currency">
