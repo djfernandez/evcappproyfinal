@@ -3,7 +3,7 @@ Proyecto final
     - (Ruta repositorio) - control de version
     - Enlace a tu pagina web
 2.- Promt / Agente (MD)
-3.- Codigo del proyecto    
+3.- Codigo del proyecto
 4.- Demo
 
 https://sistema-inventarios-z9gr.onrender.com/

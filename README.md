@@ -95,7 +95,8 @@ npm install
 npm start
 ```
 
-El servidor iniciará en: **`http://localhost:3000`**  
+El servidor iniciará en: **`http://localhost:3000`**
+
 - Abre tu navegador en: [http://localhost:3000/login.html](http://localhost:3000/login.html) o [http://localhost:3000/](http://localhost:3000/)
 
 ### 3. Ejecutar Pruebas Automatizadas
