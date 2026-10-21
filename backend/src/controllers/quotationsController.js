@@ -224,31 +224,7 @@ const createQuotation = async (req, res) => {
     const creatorId = req.user?.id || '11111111-1111-1111-1111-111111111111';
 
     if (isConfigured) {
-      // Inserción en Supabase con generación segura de correlativo anual YYYY-0001
-      const currentYear = new Date(qDate).getFullYear();
-      let quotationNumber = null;
-      try {
-        const { data: latestQuote } = await supabase
-          .from('quotations')
-          .select('quotation_number')
-          .like('quotation_number', `${currentYear}-%`)
-          .order('quotation_number', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        let nextNum = 1;
-        if (latestQuote && latestQuote.quotation_number) {
-          const parts = latestQuote.quotation_number.split('-');
-          if (parts.length === 2) {
-            const parsed = parseInt(parts[1], 10);
-            if (!isNaN(parsed)) nextNum = parsed + 1;
-          }
-        }
-        quotationNumber = `${currentYear}-${String(nextNum).padStart(4, '0')}`;
-      } catch (seqErr) {
-        console.warn('Aviso: Calculando correlativo base:', seqErr.message);
-      }
-
+      // El trigger de PostgreSQL asigna el correlativo de forma atómica.
       const insertPayload = {
         client_id,
         quotation_date: qDate,
@@ -263,9 +239,6 @@ const createQuotation = async (req, res) => {
         currency,
         created_by: creatorId
       };
-      if (quotationNumber) {
-        insertPayload.quotation_number = quotationNumber;
-      }
 
       const { data: quotation, error: qErr } = await supabase
         .from('quotations')

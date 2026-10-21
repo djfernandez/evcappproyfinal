@@ -132,7 +132,7 @@ La URL prevista de Pages es [https://djfernandez.github.io/evcappproyfinal/](htt
 
 El backend Express continúa disponible para desarrollo local y se configura con `SUPABASE_URL` y `SUPABASE_KEY` en `backend/.env`.
 
-Si al crear una cotización aparece `duplicate key value violates unique constraint "quotations_quotation_number_key"`, el contador anual puede estar atrasado respecto a cotizaciones ya guardadas. Ejecuta nuevamente `backend/database/02_triggers.sql` en el SQL Editor de Supabase para actualizar el generador; el siguiente intento elegirá un correlativo posterior a los números existentes.
+El correlativo de las cotizaciones lo genera exclusivamente el trigger de PostgreSQL, de forma atómica. Si al crear una cotización aparece `duplicate key value violates unique constraint "quotations_quotation_number_key"`, ejecuta la versión actual de [`backend/database/02_triggers.sql`](./backend/database/02_triggers.sql) en el SQL Editor de Supabase. El trigger sincroniza el contador con los números ya guardados y evita repetirlos; vuelve a intentar crear la cotización después de aplicar el script.
 
 ---
 
